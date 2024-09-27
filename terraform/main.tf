@@ -4,6 +4,15 @@ provider "aws" {
 }
 
 # -------------------------------
+# ----------- BUILD -------------
+# -------------------------------
+
+module "hc-codebuild" {
+  source = "./modules/hc-codebuild"
+  name   = "hc-codebuild"
+}
+
+# -------------------------------
 # ----------- STAGING -----------
 # -------------------------------
 
@@ -39,6 +48,16 @@ module "hc-staging-cluster" {
   vpc              = "${aws_default_vpc.default.id}"
   subnets          = ["${aws_default_subnet.default_A.id}", "${aws_default_subnet.default_B.id}"]
   desired_capacity = 1
+}
+
+module "hc-staging-pipeline" {
+  source            = "./modules/hc-codepipeline"
+  name              = "hc-staging-pipeline"
+  repository_name   = "hackcambridge/hc2020-prototype"
+  repository_branch = "master"
+  repository_owner  = "hackcambridge"
+  codebuild         = "hc-codebuild"
+  # TODO: Switch to GitHub version 2 (maybe connect hooks)
 }
 
 # -------------------------------
@@ -80,6 +99,17 @@ module "hc-prod-cluster" {
   subnets          = ["${aws_default_subnet.default_A.id}", "${aws_default_subnet.default_B.id}"]
 }
 
+module "hc-prod-pipeline" {
+  source            = "./modules/hc-codepipeline"
+  name              = "hc-prod-pipeline"
+  repository_name   = "hackcambridge/hc2020-prototype"
+  repository_branch = "deploy"
+  repository_owner  = "hackcambridge"
+  codebuild         = "hc-codebuild"
+  # TODO: Switch to GitHub version 2 (maybe connect hooks)
+}
+
+
 # -------------------------------
 # ---------- DATABASE -----------
 # -------------------------------
@@ -98,3 +128,5 @@ module "hc-2022-rds-cluster" {
     DB_USERNAME      = "${var.DB_USERNAME}"
     DB_PASSWORD      = "${var.DB_PASSWORD}"
 }
+
+
